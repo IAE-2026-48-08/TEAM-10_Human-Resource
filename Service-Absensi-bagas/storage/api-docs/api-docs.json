@@ -1,0 +1,457 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Service Absensi API",
+        "description": "API Service untuk mengelola rekap absensi bulanan karyawan. Bagian dari ekosistem HR untuk penggajian karyawan.",
+        "contact": {
+            "name": "Bagas - NIM 102022400319",
+            "email": "bagas@example.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api/v1",
+            "description": "Absensi Service API v1"
+        }
+    ],
+    "paths": {
+        "/absensi": {
+            "get": {
+                "tags": [
+                    "Absensi"
+                ],
+                "summary": "Menampilkan seluruh rekap absensi karyawan",
+                "description": "Mengambil seluruh data rekap absensi bulanan karyawan. Mendukung filter berdasarkan bulan dan tahun via query parameter.",
+                "operationId": "getAllAbsensi",
+                "parameters": [
+                    {
+                        "name": "bulan",
+                        "in": "query",
+                        "description": "Filter berdasarkan bulan (1-12)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 6
+                        }
+                    },
+                    {
+                        "name": "tahun",
+                        "in": "query",
+                        "description": "Filter berdasarkan tahun",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data absensi berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AbsensiResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/MetaInfo"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - API Key tidak valid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Absensi"
+                ],
+                "summary": "Menambahkan atau generate rekap absensi bulanan",
+                "description": "Menambahkan data rekap absensi bulanan baru untuk seorang karyawan. Jika data untuk karyawan pada bulan dan tahun yang sama sudah ada, akan mengembalikan error.",
+                "operationId": "createAbsensi",
+                "requestBody": {
+                    "description": "Data rekap absensi bulanan",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "karyawan_id",
+                                    "nama_karyawan",
+                                    "bulan",
+                                    "tahun",
+                                    "total_hadir",
+                                    "total_sakit",
+                                    "total_izin",
+                                    "total_alpha",
+                                    "total_hari_kerja"
+                                ],
+                                "properties": {
+                                    "karyawan_id": {
+                                        "description": "ID karyawan dari Service Data Karyawan",
+                                        "type": "integer",
+                                        "example": 11
+                                    },
+                                    "nama_karyawan": {
+                                        "description": "Nama lengkap karyawan",
+                                        "type": "string",
+                                        "example": "Budi Santoso"
+                                    },
+                                    "bulan": {
+                                        "description": "Bulan rekap (1-12)",
+                                        "type": "integer",
+                                        "example": 6
+                                    },
+                                    "tahun": {
+                                        "description": "Tahun rekap",
+                                        "type": "integer",
+                                        "example": 2026
+                                    },
+                                    "total_hadir": {
+                                        "description": "Jumlah hari hadir",
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "total_sakit": {
+                                        "description": "Jumlah hari sakit",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "total_izin": {
+                                        "description": "Jumlah hari izin",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "total_alpha": {
+                                        "description": "Jumlah hari alpha/tanpa keterangan",
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "total_hari_kerja": {
+                                        "description": "Total hari kerja dalam bulan",
+                                        "type": "integer",
+                                        "example": 22
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Data absensi berhasil ditambahkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data absensi berhasil ditambahkan"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AbsensiResource"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/MetaInfo"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validasi gagal"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "karyawan_id": [
+                                                    "Field karyawan_id wajib diisi."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - API Key tidak valid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            }
+        },
+        "/absensi/{id}": {
+            "get": {
+                "tags": [
+                    "Absensi"
+                ],
+                "summary": "Menampilkan rekap absensi berdasarkan karyawan",
+                "description": "Mengambil detail rekap absensi berdasarkan ID absensi spesifik (perorangan).",
+                "operationId": "getAbsensiById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID absensi",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data absensi karyawan berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data retrieved successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AbsensiResource"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/MetaInfo"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Data absensi tidak ditemukan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data absensi tidak ditemukan"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - API Key tidak valid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AbsensiResource": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "karyawan_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nama_karyawan": {
+                        "type": "string",
+                        "example": "Budi Santoso"
+                    },
+                    "bulan": {
+                        "type": "integer",
+                        "example": 6
+                    },
+                    "tahun": {
+                        "type": "integer",
+                        "example": 2026
+                    },
+                    "total_hadir": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "total_sakit": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "total_izin": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "total_alpha": {
+                        "type": "integer",
+                        "example": 0
+                    },
+                    "total_hari_kerja": {
+                        "type": "integer",
+                        "example": 22
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-04T14:00:00.000000Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-04T14:00:00.000000Z"
+                    }
+                },
+                "type": "object"
+            },
+            "MetaInfo": {
+                "properties": {
+                    "service_name": {
+                        "type": "string",
+                        "example": "Absensi-Service"
+                    },
+                    "api_version": {
+                        "type": "string",
+                        "example": "v1"
+                    }
+                },
+                "type": "object"
+            },
+            "SuccessResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Data retrieved successfully"
+                    },
+                    "data": {
+                        "type": "object"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/MetaInfo"
+                    }
+                },
+                "type": "object"
+            },
+            "ErrorResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "error"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Resource not found"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "description": "API Key untuk autentikasi. Gunakan NIM Mahasiswa sebagai value (contoh: 102022400319)",
+                "name": "X-IAE-KEY",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Absensi",
+            "description": "Absensi"
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+"Absensi rekap bulanan karyawan"
+
+type Query {
+    "Menampilkan seluruh rekap absensi karyawan"
+    absensis: [Absensi!]! @all
+
+    "Menampilkan rekap absensi berdasarkan ID"
+    absensi(id: ID! @eq): Absensi @find
+
+    "Menampilkan rekap absensi berdasarkan karyawan_id"
+    absensiByKaryawan(karyawan_id: Int! @eq): [Absensi!]! @all
+
+    "Filter absensi berdasarkan bulan dan tahun"
+    absensiByPeriode(bulan: Int! @eq, tahun: Int! @eq): [Absensi!]! @all
+}
+
+type Absensi {
+    id: ID!
+    karyawan_id: Int!
+    nama_karyawan: String!
+    bulan: Int!
+    tahun: Int!
+    total_hadir: Int!
+    total_sakit: Int!
+    total_izin: Int!
+    total_alpha: Int!
+    total_hari_kerja: Int!
+    created_at: String
+    updated_at: String
+}

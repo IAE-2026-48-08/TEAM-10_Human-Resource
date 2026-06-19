@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # Service Absensi - Laravel Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: service-absensi
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    environment:
+      - APP_NAME=Service Absensi
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8000
+      - DB_CONNECTION=sqlite
+      - API_KEY=102022400319
+      - L5_SWAGGER_GENERATE_ALWAYS=true
+    volumes:
+      - ./database/database.sqlite:/var/www/html/database/database.sqlite
+    networks:
+      - absensi-network
+
+networks:
+  absensi-network:
+    driver: bridge
