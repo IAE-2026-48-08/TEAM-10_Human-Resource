@@ -73,6 +73,8 @@ services:
       - SSO_API_KEY=KEY-MHS-409
       - TEAM_ID=TEAM-10
       - APP_KEY=base64:GGXj7/7vxFA8RX76yDR5rErfXcIhzjb6ZersEMfbn/Y=
+      - EMPLOYEE_SERVICE_URL=http://employee-web:80
+      - EMPLOYEE_SERVICE_KEY=102022400090
     volumes:
       - ./Service-Absensi-bagas:/var/www/html
     networks:

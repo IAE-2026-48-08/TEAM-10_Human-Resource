@@ -304,7 +304,7 @@ class AbsensiController extends Controller
         try {
             $validated = $request->validate([
                 'karyawan_id' => 'required|integer|min:1',
-                'nama_karyawan' => 'required|string|max:255',
+                'nama_karyawan' => 'nullable|string|max:255',
                 'bulan' => 'required|integer|min:1|max:12',
                 'tahun' => 'required|integer|min:2000|max:2100',
                 'total_hadir' => 'required|integer|min:0',
@@ -313,6 +313,28 @@ class AbsensiController extends Controller
                 'total_alpha' => 'required|integer|min:0',
                 'total_hari_kerja' => 'required|integer|min:1|max:31',
             ]);
+
+            // Ambil data karyawan secara internal dari Data Karyawan Service
+            $employeeServiceUrl = env('EMPLOYEE_SERVICE_URL', 'http://employee-web:80');
+            $employeeServiceKey = env('EMPLOYEE_SERVICE_KEY', '102022400090');
+
+            $employeeResponse = Http::withoutVerifying()
+                ->withHeaders(['X-IAE-KEY' => $employeeServiceKey])
+                ->get("{$employeeServiceUrl}/api/v1/employees/{$validated['karyawan_id']}");
+
+            if ($employeeResponse->failed()) {
+                return $this->errorResponse(
+                    'Karyawan tidak ditemukan atau Service Data Karyawan tidak aktif: ' . $employeeResponse->body(),
+                    404
+                );
+            }
+
+            $employeeName = $employeeResponse->json('data.nama');
+            if (empty($employeeName)) {
+                return $this->errorResponse('Data karyawan tidak memiliki nama yang valid.', 400);
+            }
+
+            $validated['nama_karyawan'] = $employeeName;
 
             // Cek apakah data absensi untuk karyawan di bulan & tahun ini sudah ada
             $exists = Absensi::where('karyawan_id', $validated['karyawan_id'])
