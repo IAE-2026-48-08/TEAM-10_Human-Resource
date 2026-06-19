@@ -11,11 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    $middleware->alias([
-        'check.api.key' => \App\Http\Middleware\SsoJwtMiddleware::class,
-        'sso.jwt' => \App\Http\Middleware\SsoJwtMiddleware::class,
-    ]);
-})
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'check.api.key' => \App\Http\Middleware\SsoJwtMiddleware::class,
+            'sso.jwt' => \App\Http\Middleware\SsoJwtMiddleware::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

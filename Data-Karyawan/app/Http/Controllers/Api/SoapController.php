@@ -39,7 +39,8 @@ class SoapController extends Controller
         if (!$token) {
             $tokenResponse = Http::withOptions(['verify' => false, 'timeout' => 30])
                 ->post("{$this->ssoUrl}/api/v1/auth/token", [
-                    'api_key' => 'KEY-MHS-153'
+                    'api_key' => env('SSO_API_KEY', 'KEY-MHS-153'),
+                    'nim'     => env('API_KEY', '102022400090'),
                 ]);
 
             if (!$tokenResponse->successful()) {
