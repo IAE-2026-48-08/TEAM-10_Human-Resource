@@ -362,7 +362,8 @@ class AbsensiController extends Controller
                 // 1. Dapatkan M2M Token dari SSO
                 $m2mToken = Cache::remember('sso_m2m_token', 3000, function () use ($ssoUrl, $apiKey) {
                     $response = Http::withoutVerifying()->post("{$ssoUrl}/api/v1/auth/token", [
-                        'api_key' => $apiKey
+                        'api_key' => $apiKey,
+                        'nim'     => env('API_KEY', '102022400319'),
                     ]);
                     if ($response->failed()) {
                         throw new \Exception('Gagal mendapatkan M2M token dari SSO server.');
