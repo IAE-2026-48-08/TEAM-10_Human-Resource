@@ -1,0 +1,36 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payroll_app
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    volumes:
+      - .:/var/www
+    networks:
+      - payroll_network
+
+  db:
+    image: mysql:8.0
+    container_name: payroll_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: payroll_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: secret
+      MYSQL_USER: payroll_user
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - payroll_network
+
+networks:
+  payroll_network:
+    driver: bridge
+
+volumes:
+  dbdata:

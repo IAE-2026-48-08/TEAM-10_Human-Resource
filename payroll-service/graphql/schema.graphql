@@ -1,0 +1,26 @@
+"A datetime string with format `Y-m-d H:i:s`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+type Payroll {
+    id: ID!
+    employee_id: Int!
+    employee_name: String!
+    period_month: Int!
+    period_year: Int!
+    base_salary: Float!
+    total_present: Int!
+    total_absent: Int!
+    total_leave: Int!
+    deduction: Float!
+    bonus: Float!
+    net_salary: Float!
+    status: String!
+    processed_at: DateTime
+    created_at: DateTime
+    updated_at: DateTime
+}
+
+type Query {
+    payrolls: [Payroll!]! @all
+    payroll(id: ID! @eq): Payroll @find
+}

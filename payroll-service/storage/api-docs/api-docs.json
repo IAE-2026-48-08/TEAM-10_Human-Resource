@@ -1,0 +1,165 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Payroll Service API",
+        "description": "API untuk manajemen penggajian karyawan",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/payrolls": {
+            "get": {
+                "tags": [
+                    "Payroll"
+                ],
+                "summary": "Menampilkan seluruh data penggajian",
+                "operationId": "87ecc8172398988c4952511406708db5",
+                "responses": {
+                    "200": {
+                        "description": "Data retrieved successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payrolls/{id}": {
+            "get": {
+                "tags": [
+                    "Payroll"
+                ],
+                "summary": "Menampilkan detail penggajian berdasarkan ID",
+                "operationId": "c498f5bc1db4894e893cab485a2750e9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data retrieved successfully"
+                    },
+                    "404": {
+                        "description": "Payroll not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payrolls/process": {
+            "post": {
+                "tags": [
+                    "Payroll"
+                ],
+                "summary": "Memproses penggajian karyawan",
+                "operationId": "38e22764f532cea28dad36e9bc3cbd74",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "employee_id",
+                                    "employee_name",
+                                    "period_month",
+                                    "period_year",
+                                    "base_salary",
+                                    "total_present",
+                                    "total_absent",
+                                    "total_leave"
+                                ],
+                                "properties": {
+                                    "employee_id": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "employee_name": {
+                                        "type": "string",
+                                        "example": "Dewi Lestari"
+                                    },
+                                    "period_month": {
+                                        "type": "integer",
+                                        "example": 6
+                                    },
+                                    "period_year": {
+                                        "type": "integer",
+                                        "example": 2025
+                                    },
+                                    "base_salary": {
+                                        "type": "number",
+                                        "example": 5000000
+                                    },
+                                    "total_present": {
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "total_absent": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "total_leave": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "bonus": {
+                                        "type": "number",
+                                        "example": 500000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payroll processed successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "name": "X-IAE-KEY",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Payroll",
+            "description": "Payroll"
+        }
+    ]
+}
