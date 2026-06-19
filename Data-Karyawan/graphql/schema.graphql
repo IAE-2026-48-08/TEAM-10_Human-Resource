@@ -1,0 +1,13 @@
+type Employee {
+    id: ID!
+    nip: String!
+    nama: String!
+    jabatan: String!
+    departemen: String!
+    gaji_pokok: Float!
+    email: String!
+}
+
+type Query {
+    employees: [Employee!]! @all
+}
