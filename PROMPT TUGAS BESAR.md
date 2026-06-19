@@ -1,9 +1,8 @@
 # Prompt Engineering Log — Tugas Besar IAE
-Nama: Satrio
+Nama: I Gede Satriya Pradnya Wiguna 
 NIM: 102022400173
 Akun: warga34@ktp.iae.id
 Service: Payroll Service (Human Resource)
-Tanggal: 20 Juni 2026
 
 ## Konteks Awal
 
