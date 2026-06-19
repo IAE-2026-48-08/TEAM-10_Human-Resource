@@ -68,6 +68,7 @@ services:
       - APP_DEBUG=true
       - APP_URL=http://absensi-app
       - DB_CONNECTION=sqlite
+      - DB_DATABASE=/tmp/database.sqlite
       - API_KEY=102022400319
       - SSO_BASE_URL=https://iae-sso.virtualfri.id
       - SSO_API_KEY=KEY-MHS-409
