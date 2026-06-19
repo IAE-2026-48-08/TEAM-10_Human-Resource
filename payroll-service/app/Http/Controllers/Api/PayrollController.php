@@ -8,6 +8,7 @@ use App\Services\SsoService;
 use App\Services\SoapAuditService;
 use App\Services\RabbitMqService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use OpenApi\Attributes as OA;
 
@@ -95,16 +96,11 @@ class PayrollController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["employee_id","employee_name","period_month","period_year","base_salary","total_present","total_absent","total_leave"],
+                required: ["employee_id","period_month","period_year"],
                 properties: [
-                    new OA\Property(property: "employee_id", type: "integer", example: 4),
-                    new OA\Property(property: "employee_name", type: "string", example: "Dewi Lestari"),
+                    new OA\Property(property: "employee_id", type: "integer", example: 1),
                     new OA\Property(property: "period_month", type: "integer", example: 6),
-                    new OA\Property(property: "period_year", type: "integer", example: 2025),
-                    new OA\Property(property: "base_salary", type: "number", example: 5000000),
-                    new OA\Property(property: "total_present", type: "integer", example: 20),
-                    new OA\Property(property: "total_absent", type: "integer", example: 2),
-                    new OA\Property(property: "total_leave", type: "integer", example: 0),
+                    new OA\Property(property: "period_year", type: "integer", example: 2026),
                     new OA\Property(property: "bonus", type: "number", example: 500000),
                 ]
             )
@@ -119,21 +115,78 @@ class PayrollController extends Controller
     {
         $validated = $request->validate([
             'employee_id'   => 'required|integer',
-            'employee_name' => 'required|string',
             'period_month'  => 'required|integer|min:1|max:12',
             'period_year'   => 'required|integer|min:2000',
-            'base_salary'   => 'required|numeric|min:0',
-            'total_present' => 'required|integer|min:0',
-            'total_absent'  => 'required|integer|min:0',
-            'total_leave'   => 'required|integer|min:0',
             'bonus'         => 'nullable|numeric|min:0',
         ]);
 
+        // 1. Ambil data karyawan dari Data Karyawan Service
+        $employeeServiceUrl = env('EMPLOYEE_SERVICE_URL', 'http://employee-web:80');
+        $employeeServiceKey = env('EMPLOYEE_SERVICE_KEY', '102022400090');
+
+        $employeeResponse = Http::withoutVerifying()
+            ->withHeaders(['X-IAE-KEY' => $employeeServiceKey])
+            ->get("{$employeeServiceUrl}/api/v1/employees/{$validated['employee_id']}");
+
+        if ($employeeResponse->failed()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data karyawan tidak ditemukan atau Service Data Karyawan tidak aktif.',
+                'errors'  => $employeeResponse->body(),
+            ], 404);
+        }
+
+        $employeeData = $employeeResponse->json('data');
+        $employeeName = $employeeData['nama'] ?? null;
+        $baseSalary = $employeeData['gaji_pokok'] ?? null;
+
+        if (!$employeeName || !$baseSalary) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Format data karyawan yang dikembalikan tidak valid.',
+                'errors'  => null,
+            ], 400);
+        }
+
+        // 2. Ambil data kehadiran dari Service Absensi
+        $absensiServiceUrl = env('ABSENSI_SERVICE_URL', 'http://absensi-app:80');
+        $absensiServiceKey = env('ABSENSI_SERVICE_KEY', '102022400319');
+
+        $absensiResponse = Http::withoutVerifying()
+            ->withHeaders(['X-IAE-KEY' => $absensiServiceKey])
+            ->get("{$absensiServiceUrl}/api/v1/absensi", [
+                'karyawan_id' => $validated['employee_id'],
+                'bulan'       => $validated['period_month'],
+                'tahun'       => $validated['period_year'],
+            ]);
+
+        if ($absensiResponse->failed()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data absensi tidak ditemukan atau Service Absensi tidak aktif.',
+                'errors'  => $absensiResponse->body(),
+            ], 404);
+        }
+
+        $absensiList = $absensiResponse->json('data');
+        if (empty($absensiList)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Rekap absensi untuk karyawan ID {$validated['employee_id']} pada bulan {$validated['period_month']}/{$validated['period_year']} tidak ditemukan.",
+                'errors'  => null,
+            ], 404);
+        }
+
+        $absensiRecord = $absensiList[0];
+        $totalPresent  = $absensiRecord['total_hadir'] ?? 22;
+        $totalAbsent   = $absensiRecord['total_alpha'] ?? 0;
+        $totalLeave    = ($absensiRecord['total_izin'] ?? 0) + ($absensiRecord['total_sakit'] ?? 0);
+        $totalWorkDays = $absensiRecord['total_hari_kerja'] ?? 22;
+
         // Hitung gaji
-        $workDays  = 22;
         $bonus     = $validated['bonus'] ?? 0;
-        $deduction = ($validated['base_salary'] / $workDays) * $validated['total_absent'];
-        $netSalary = $validated['base_salary'] - $deduction + $bonus;
+        $deduction = ($baseSalary / $totalWorkDays) * $totalAbsent;
+        $netSalary = $baseSalary - $deduction + $bonus;
         $now       = Carbon::now();
 
         // Step 1: Login SSO
@@ -143,13 +196,13 @@ class PayrollController extends Controller
         // Step 2: Simpan data penggajian
         $payroll = Payroll::create([
             'employee_id'   => $validated['employee_id'],
-            'employee_name' => $validated['employee_name'],
+            'employee_name' => $employeeName,
             'period_month'  => $validated['period_month'],
             'period_year'   => $validated['period_year'],
-            'base_salary'   => $validated['base_salary'],
-            'total_present' => $validated['total_present'],
-            'total_absent'  => $validated['total_absent'],
-            'total_leave'   => $validated['total_leave'],
+            'base_salary'   => $baseSalary,
+            'total_present' => $totalPresent,
+            'total_absent'  => $totalAbsent,
+            'total_leave'   => $totalLeave,
             'deduction'     => round($deduction, 2),
             'bonus'         => $bonus,
             'net_salary'    => round($netSalary, 2),

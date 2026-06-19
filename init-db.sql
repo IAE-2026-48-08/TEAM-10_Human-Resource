@@ -1,0 +1,2 @@
+CREATE DATABASE IF NOT EXISTS `data_karyawan`;
+CREATE DATABASE IF NOT EXISTS `payroll_db`;

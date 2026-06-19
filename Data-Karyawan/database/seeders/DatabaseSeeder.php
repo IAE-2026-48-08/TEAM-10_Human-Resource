@@ -15,11 +15,32 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Seed default employees
+        \App\Models\Employee::create([
+            'nip' => 'EMP001',
+            'nama' => 'Budi Santoso',
+            'jabatan' => 'HR Staff',
+            'departemen' => 'Human Resource',
+            'gaji_pokok' => 5000000.00,
+            'email' => 'budi@example.com'
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        \App\Models\Employee::create([
+            'nip' => 'EMP002',
+            'nama' => 'Dewi Lestari',
+            'jabatan' => 'Financial Analyst',
+            'departemen' => 'Finance',
+            'gaji_pokok' => 6500000.00,
+            'email' => 'dewi@example.com'
+        ]);
+
+        \App\Models\Employee::create([
+            'nip' => 'EMP003',
+            'nama' => 'Ramdani Cahyo',
+            'jabatan' => 'Senior Developer',
+            'departemen' => 'IT',
+            'gaji_pokok' => 8000000.00,
+            'email' => 'ramdani@example.com'
         ]);
     }
 }

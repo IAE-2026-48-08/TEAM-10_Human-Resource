@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # Database untuk payroll-service & Data-Karyawan
+  mysql-db:
+    image: mysql:8.0
+    container_name: team10_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - team10_network
+
+  # Service 1: Data Karyawan (PHP-FPM)
+  employee-app:
+    build:
+      context: ./Data-Karyawan
+      dockerfile: dockerfile
+    container_name: employee_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./Data-Karyawan:/var/www
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_DATABASE=data_karyawan
+      - DB_USERNAME=root
+      - DB_PASSWORD=
+      - API_KEY=102022400090
+      - APP_KEY=base64:GGXj7/7vxFA8RX76yDR5rErfXcIhzjb6ZersEMfbn/Y=
+      - APP_ENV=local
+      - APP_DEBUG=true
+    depends_on:
+      - mysql-db
+    networks:
+      - team10_network
+
+  # Service 1: Data Karyawan (Nginx Web)
+  employee-web:
+    image: nginx:latest
+    container_name: employee_web
+    restart: unless-stopped
+    volumes:
+      - ./Data-Karyawan:/var/www
+      - ./employee-nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - employee-app
+    networks:
+      - team10_network
+
+  # Service 2: Absensi (Apache based PHP)
+  absensi-app:
+    build:
+      context: ./Service-Absensi-bagas
+      dockerfile: Dockerfile
+    container_name: absensi_app
+    restart: unless-stopped
+    environment:
+      - APP_NAME=Service Absensi
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://absensi-app
+      - DB_CONNECTION=sqlite
+      - API_KEY=102022400319
+      - SSO_BASE_URL=https://iae-sso.virtualfri.id
+      - SSO_API_KEY=KEY-MHS-409
+      - TEAM_ID=TEAM-10
+      - APP_KEY=base64:GGXj7/7vxFA8RX76yDR5rErfXcIhzjb6ZersEMfbn/Y=
+    volumes:
+      - ./Service-Absensi-bagas:/var/www/html
+    networks:
+      - team10_network
+
+  # Service 3: Payroll
+  payroll-app:
+    build:
+      context: ./payroll-service
+      dockerfile: Dockerfile
+    container_name: payroll_app
+    restart: unless-stopped
+    working_dir: /var/www
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_DATABASE=payroll_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=
+      - IAE_KEY=102022400173
+      - SSO_API_KEY=KEY-MHS-238
+      - SSO_URL=https://iae-sso.virtualfri.id
+      - SOAP_URL=https://iae-sso.virtualfri.id/soap/v1/audit
+      - RABBITMQ_URL=https://iae-sso.virtualfri.id/api/v1/messages/publish
+      - APP_KEY=base64:GGXj7/7vxFA8RX76yDR5rErfXcIhzjb6ZersEMfbn/Y=
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - EMPLOYEE_SERVICE_URL=http://employee-web:80
+      - EMPLOYEE_SERVICE_KEY=102022400090
+      - ABSENSI_SERVICE_URL=http://absensi-app:80
+      - ABSENSI_SERVICE_KEY=102022400319
+    volumes:
+      - ./payroll-service:/var/www
+    depends_on:
+      - mysql-db
+    networks:
+      - team10_network
+
+  # API Gateway Nginx
+  api-gateway:
+    image: nginx:latest
+    container_name: team10_gateway
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx-gateway.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - employee-web
+      - absensi-app
+      - payroll-app
+    networks:
+      - team10_network
+
+networks:
+  team10_network:
+    driver: bridge
+
+volumes:
+  mysql_data:

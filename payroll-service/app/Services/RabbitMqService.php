@@ -16,16 +16,19 @@ class RabbitMqService
     public function publishPayrollProcessed(array $payrollData, string $token): array
     {
         $message = [
-            'event'     => 'payroll.processed',
-            'timestamp' => now('Asia/Jakarta')->toIso8601String(),
-            'data'      => [
-                'employee_id'    => $payrollData['employee_id'],
-                'employee_name'  => $payrollData['employee_name'],
-                'period_month'   => $payrollData['period_month'],
-                'period_year'    => $payrollData['period_year'],
-                'net_salary'     => $payrollData['net_salary'],
-                'receipt_number' => $payrollData['receipt_number'] ?? null,
-                'status'         => 'processed',
+            'routing_key' => 'payroll.processed',
+            'message'     => [
+                'event'     => 'payroll.processed',
+                'timestamp' => now('Asia/Jakarta')->toIso8601String(),
+                'data'      => [
+                    'employee_id'    => $payrollData['employee_id'],
+                    'employee_name'  => $payrollData['employee_name'],
+                    'period_month'   => $payrollData['period_month'],
+                    'period_year'    => $payrollData['period_year'],
+                    'net_salary'     => $payrollData['net_salary'],
+                    'receipt_number' => $payrollData['receipt_number'] ?? null,
+                    'status'         => 'processed',
+                ],
             ],
         ];
 

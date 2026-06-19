@@ -158,6 +158,11 @@ class AbsensiController extends Controller
     {
         $query = Absensi::query();
 
+        // Filter opsional berdasarkan karyawan_id
+        if ($request->has('karyawan_id')) {
+            $query->where('karyawan_id', $request->query('karyawan_id'));
+        }
+
         // Filter opsional berdasarkan bulan
         if ($request->has('bulan')) {
             $query->where('bulan', $request->query('bulan'));
@@ -329,10 +334,13 @@ class AbsensiController extends Controller
             // INTEGRASI TUGAS 3: SOAP & RabbitMQ
             // ==========================================
             try {
+                $ssoUrl = env('SSO_BASE_URL', 'https://iae-sso.virtualfri.id');
+                $apiKey = env('SSO_API_KEY', 'KEY-MHS-409');
+
                 // 1. Dapatkan M2M Token dari SSO
-                $m2mToken = Cache::remember('sso_m2m_token', 3000, function () {
-                    $response = Http::withoutVerifying()->post('https://iae-sso.virtualfri.id/api/v1/auth/token', [
-                        'api_key' => 'KEY-MHS-409'
+                $m2mToken = Cache::remember('sso_m2m_token', 3000, function () use ($ssoUrl, $apiKey) {
+                    $response = Http::withoutVerifying()->post("{$ssoUrl}/api/v1/auth/token", [
+                        'api_key' => $apiKey
                     ]);
                     if ($response->failed()) {
                         throw new \Exception('Gagal mendapatkan M2M token dari SSO server.');
@@ -345,7 +353,7 @@ class AbsensiController extends Controller
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:iae="http://iae.central/audit">
   <soap:Body>
     <iae:AuditRequest>
-      <iae:TeamID>TEAM-10</iae:TeamID>
+      <iae:TeamID>' . env('TEAM_ID', 'TEAM-10') . '</iae:TeamID>
       <iae:ActivityName>AbsensiCreated</iae:ActivityName>
       <iae:LogContent><![CDATA[' . json_encode($absensi) . ']]></iae:LogContent>
     </iae:AuditRequest>
@@ -358,7 +366,7 @@ class AbsensiController extends Controller
                         'Authorization' => 'Bearer ' . $m2mToken
                     ])
                     ->withBody($soapXml, 'text/xml')
-                    ->post('https://iae-sso.virtualfri.id/soap/v1/audit');
+                    ->post("{$ssoUrl}/soap/v1/audit");
 
                 $receiptNumber = null;
                 if ($soapResponse->successful()) {
@@ -377,7 +385,7 @@ class AbsensiController extends Controller
                         'Content-Type' => 'application/json',
                         'Authorization' => 'Bearer ' . $m2mToken
                     ])
-                    ->post('https://iae-sso.virtualfri.id/api/v1/messages/publish', [
+                    ->post("{$ssoUrl}/api/v1/messages/publish", [
                         'routing_key' => 'absensi.created',
                         'message' => [
                             'event' => 'absensi.created',

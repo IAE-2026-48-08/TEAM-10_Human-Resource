@@ -12,7 +12,7 @@ class SoapAuditService
     public function __construct()
     {
         $this->url    = env('SOAP_URL', 'https://iae-sso.virtualfri.id/soap/v1/audit');
-        $this->teamId = 'TEAM-10' . env('SSO_API_KEY', 'KEY-MHS-238');
+        $this->teamId = 'TEAM-10';
     }
 
     public function auditPayroll(array $payrollData, string $token): array
